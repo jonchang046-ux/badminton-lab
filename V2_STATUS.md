@@ -46,11 +46,14 @@
 - 4197 首頁 HTTP 200，標題 Badminton Lab V2｜羽球裝備管理；manifest/icons/assets 及舊 API 不對外提供已檢查。
 - 瀏覽器登入／註冊入口切換正常；390×844、320×740 的登入頁未見橫向溢出，可見按鈕至少 44px。瀏覽器沒有 error/warn。
 - 手機測試畫面保留在 v2-mobile-preview.jpg。
+- Supabase 連線後唯讀確認 life-tools 為 ACTIVE_HEALTHY；家庭補貨四張表仍啟用 RLS，沒有修改。
+- public/config.js 已設定 life-tools 的公開 URL／publishable key；真實 Auth settings 請求成功，Email 登入啟用、註冊啟用、Email 確認保留。
+- 真實 REST 請求回報 PGRST205／404，與唯讀 schema 查詢一致：badminton_ 表尚未建立；此結果不是 RLS 隔離通過證據。
 
 ## 尚未執行／權限待補
 
 1. life-tools SQL migration 的真實執行結果。
-2. Project URL／publishable key 設定（config.js 目前空白）。
+2. Project URL／publishable key 已透過 Supabase 連線取得並設定；唯讀查詢確認 badminton_ 表目前不存在。
 3. 真實 Supabase Auth、球拍／穿線 CRUD、完整 Dashboard 與匯入流程的瀏覽器回歸。
 4. 真實 A/B／未登入者 RLS 隔離測試與五張表 RLS=true 確認。工具已提供，不將本機測試替身結果當作 RLS 證據。
 5. 實體 iPhone Safari 與加入主畫面驗證。
@@ -58,7 +61,7 @@
 
 ## 下一步
 
-使用者在 life-tools SQL Editor 完整執行 migration，回覆結果，再提供 Connect 中的 Project URL／publishable key。開發者接著設定 config.js，進行真實雲端與兩帳號隔離測試；通過後再完成 GitHub repo／Pages，並取得公開 source 的明確確認。
+使用者在 life-tools SQL Editor 完整執行 migration，回覆結果即可，無須再提供公開 URL／key。開發者接著進行真實雲端與兩帳號隔離測試；通過後再完成 GitHub repo／Pages，並取得公開 source 的明確確認。
 
 ## 目前限制／技術債
 
@@ -83,4 +86,4 @@
 | preview.mjs、start.cmd、package.json、.github/workflows/pages.yml | 獨立 4197 預覽與 Pages 部署準備 |
 | .gitignore、README.md、README-V1.md、V2_STATUS.md | 私人資料忽略、操作說明、歷史文件保留與測試狀態 |
 
-影響僅限 Badminton Lab 的主要檢視與部署流程；現有 SQLite 和 V1 repository/server 原碼保留。正式雲端功能需待 SQL／公開設定完成後啟用。
+影響僅限 Badminton Lab 的主要檢視與部署流程；現有 SQLite 和 V1 repository/server 原碼保留。公開設定已完成，正式雲端裝備功能需待 SQL 套用後測試。

@@ -2,7 +2,7 @@
 
 在原本 Badminton Lab 專案內升級，沿用深色中文 UI、球拍 CRUD、分開主／橫線磅數、六項心得、詳細頁與歷史。
 
-**目前狀態：程式與 SQL 已準備，本機測試通過；等待在 life-tools 手動套用 migration 與提供公開設定。尚未完成真實兩帳號隔離驗證、GitHub repository 建立及正式部署，不能視為已上線正式版。**
+**目前狀態：程式與 SQL 已準備，本機測試通過；已連接 life-tools 並設定 Project URL／publishable key，唯讀檢查確認尚未建立 badminton_ 資料表，等待使用者手動套用 migration。尚未完成真實兩帳號隔離驗證、GitHub repository 建立及正式部署，不能視為已上線正式版。**
 
 ## 啟動預覽
 
@@ -38,7 +38,7 @@ RPC：badminton_snapshot（一致的個人完整資料）、badminton_import_v1�
 
 ## 取得公開設定
 
-打開 life-tools 的 **Connect**，可取得 Project URL 與 publishable key；或到 **Settings → API Keys** 複製 publishable key。將這兩項交給開發者設定 `public/config.js`：
+目前已透過 Supabase 連線取得並設定 `public/config.js`，不需要使用者再提供。日後更換設定時，打開 life-tools 的 **Connect**，可取得 Project URL 與 publishable key；或到 **Settings → API Keys** 複製 publishable key：
 
 ```js
 export const config = Object.freeze({
@@ -133,7 +133,7 @@ V2 請使用 preview.mjs，不用舊 server.mjs 啟動介面。
 
 ## 待完成／限制
 
-- 等待 life-tools SQL 實際執行及公開 URL/key 設定。
+- life-tools 公開 URL/key 已設定；等待 SQL 實際執行。
 - 等待真實雲端 CRUD、匯入、A/B/anon 隔離與 RLS 開啟驗證。
 - 等待專屬遠端 repository、公開授權與正式部署。
 - 未實測實體 iPhone／Android、大量資料效能及 Email 送信。送信能力沿用 life-tools 既有設定；任何 SMTP 調整都需另外確認。
