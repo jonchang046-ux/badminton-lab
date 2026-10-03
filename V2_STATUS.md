@@ -1,6 +1,9 @@
 # Badminton Lab V2 進度與驗證
 
-日期：2026-10-03。這是沿用原專案的 V2 改造，**正式上線尚未完成**。
+日期：2026-10-03。沿用原專案的 V2 改造，網站已公開部署；正式網址登入與 Email 確認回跳仍在驗證。
+
+- 正式網站：https://jonchang046-ux.github.io/badminton-lab/
+- 獨立 repository：https://github.com/jonchang046-ux/badminton-lab
 
 ## 範圍核對與資料保留
 
@@ -63,11 +66,12 @@
 3. 真實 Supabase Auth、球拍／穿線 CRUD、Dashboard 與舊資料匯入瀏覽器回歸已通過。
 4. 真實 A/B／未登入者 RLS 隔離與五張表 RLS=true 已通過，不將單元測試替身當作 RLS 證據。
 5. 待實體 iPhone Safari、加入主畫面及跨實體裝置驗證。
-6. 待專屬 GitHub 遠端 repository 建立、public 授權、正式部署與正式 URL。
+6. 已取得 public／部署授權，建立專屬遠端 repository，完整推送既有 Git 歷史；Pages run 37094344632 attempt 2 成功。正式首頁與 public 資產 HTTP 200，私人路徑與本機 QA 均 404。
+7. 正式網址的 A 登入與 Supabase 精確回跳網址設定仍在確認；不改共用 Site URL 或 Email 確認設定。
 
 ## 下一步
 
-雲端功能、原資料匯入與兩帳號隔離已完成，QA 已依確認清理。接著取得公開 source 的明確確認，建立專屬 GitHub repo／Pages，驗證正式網址。
+正式網址已顯示 Badminton Lab；接著確認 A 在正式網址讀取原有 3／2 資料，以及 Email 確認可回到 App。實體手機／Safari、送信與跨實體裝置保留為未驗證項目。
 
 ## 目前限制／技術債
 
@@ -75,6 +79,7 @@
 
 - 已修正的 bug：背景同步曾重繪帳號頁、清除已選匯入檔案；public/app.js 改為保留匯入表單，實際輪詢及手動同步後匯入成功。
 - V2 備份匯出點擊後沒有 console 錯誤，但 Preview 下載事件逾時，尚未確認下載檔案落地，須在一般瀏覽器補測。
+- GitHub Actions 使用的部分官方 action 有 Node 20 相容性警告，runner 已改用 Node 24，部署成功；日後可另行升級 action 版本，這次未改 build 流程。
 - 純 REST Auth client 沒有依賴 SDK，已處理基本 session/refresh，但 MFA、忘記密碼、社群登入不在本輪。
 - snapshot 一次載入所有個人資料；沒有筆數硬上限，但大量資料尚需分頁與效能設計。
 - PWA 只提供公開 shell 離線快取，沒有離線私人紀錄或待送佇列。
@@ -95,7 +100,7 @@
 | preview.mjs、start.cmd、package.json、.github/workflows/pages.yml | 獨立 4197 預覽與 Pages 部署準備 |
 | .gitignore、README.md、README-V1.md、V2_STATUS.md | 私人資料忽略、操作說明、歷史文件保留與測試狀態 |
 
-影響僅限 Badminton Lab 的主要檢視與部署流程；SQLite 和 V1 repository/server 原碼保留。實際帳號與瀏覽器功能、安全測試已完成，正式上線仍待部署。
+影響僅限 Badminton Lab 的主要檢視與獨立部署；SQLite 和 V1 repository/server 原碼保留。已公開部署，實際帳號、資料功能與隔離測試通過；正式網址登入與 Email 回跳仍在確認。
 
 ## 下一版最值得增加的 5 個功能
 

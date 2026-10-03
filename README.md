@@ -2,7 +2,9 @@
 
 在原本 Badminton Lab 專案內升級，沿用深色中文 UI、球拍 CRUD、分開主／橫線磅數、六項心得、詳細頁與歷史。
 
-**目前狀態：life-tools migration、兩個真實帳號登入、雲端 CRUD／重新整理保存、MVP 舊資料匯入與 12 項實際 API 隔離測試已通過。經使用者同意清理 QA 後，A 保留原有 3 支球拍、2 筆穿線，B 無測試紀錄。仍待 GitHub repository 建立及正式部署，不能視為已上線正式版。**
+正式網站：[Badminton Lab](https://jonchang046-ux.github.io/badminton-lab/)。獨立原始碼：[jonchang046-ux/badminton-lab](https://github.com/jonchang046-ux/badminton-lab)。
+
+**目前狀態：網站已公開部署，首頁與公開資產 HTTP 200。life-tools migration、兩個真實帳號登入、雲端 CRUD／重新整理保存、MVP 舊資料匯入與 12 項實際 API 隔離測試已通過。經使用者同意清理 QA 後，A 保留原有 3 支球拍、2 筆穿線，B 無測試紀錄。正式網址的 A 登入及 Email 回跳設定仍在確認中。**
 
 ## 啟動預覽
 
@@ -88,9 +90,11 @@ node tools/export-mvp.mjs
 
 ## 獨立 GitHub / Pages 部署
 
-方案是專屬 badminton-lab repository + GitHub Pages 靜態網站 + Supabase，部署內容只包含 public/。目前已有本機獨立 Git repository，保留 MVP 初始 commit；尚未建立遠端或公開 source。
+方案是專屬 badminton-lab repository + GitHub Pages 靜態網站 + Supabase，部署內容只包含 public/。已取得使用者明確公開／部署同意，建立上述公開 repository，從原本獨立 Git 推送全部程式歷史，保留 MVP 初始 commit。SQLite、JSON 備份、Email、使用者 UUID 與 token 不在提交內容中。
 
-`.github/workflows/pages.yml` 已準備好：push main → 跑測試 → 上傳 public/ → 部署 github-pages。GitHub repository 建立後，在 Settings → Pages 選 GitHub Actions。若使用公開 repo，需要先取得你的明確同意，因為程式、migration 和公開設定都會公開；私人裝備及備份不會上傳。
+`.github/workflows/pages.yml`：push main → 跑測試 → 上傳 public/ → 部署 github-pages。Settings → Pages 已選 GitHub Actions。首次 push 在尚未啟用 Pages 時遇到 configure-pages 404；啟用後重跑成功，沒有更換 build 流程或套件。
+
+成功紀錄：[Deploy Badminton Lab，run 37094344632，attempt 2](https://github.com/jonchang046-ux/badminton-lab/actions/runs/37094344632)。部署後已在瀏覽器確認 Badminton Lab 登入頁；__qa/、api/state、data/badminton.sqlite 與 private-backups 測試路徑均為 HTTP 404。
 
 正式網址只在實際部署成功後回報，不以預估 URL 當完成證明。GitHub Pages 的 static app 不需部署 Node/SQLite。不要使用家庭補貨助手的 repository、workflow 或部署目標。
 
@@ -138,7 +142,7 @@ V2 請使用 preview.mjs，不用舊 server.mjs 啟動介面。
 
 - life-tools 公開 URL/key、SQL migration 與資料庫角色隔離驗證已完成。
 - 真實雲端 CRUD、使用狀態、歷史、Dashboard、舊資料匯入與 A/B/anon 隔離已通過；QA 已清理，原資料保留。
-- 等待專屬遠端 repository、公開授權與正式部署。
+- 專屬公開 repository、公開授權與正式部署已完成；正式帳號登入與 Email 確認回跳待補驗。
 - 320／390px 手機及 1440px 桌面檢查未見橫向溢出。未實測實體 iPhone／Android、跨實體裝置、大量資料及 Email 送信。送信能力沿用 life-tools 設定；SMTP 調整需另外確認。
 - 已點擊 V2 備份匯出，沒有瀏覽器錯誤；Preview 下載事件逾時，尚未確認下載檔案落地，須在一般瀏覽器補測。
 - 同步是重新整理／前景輪詢，沒有 WebSocket 秒級即時推送。
