@@ -6,7 +6,7 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-echo Open http://127.0.0.1:4173 in your browser.
+echo Open http://127.0.0.1:4197 in your browser.
 echo Keep this window open while using Badminton Lab.
-node server.mjs
+node preview.mjs
 pause

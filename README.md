@@ -1,77 +1,98 @@
-# Badminton Lab
+# Badminton Lab V2
 
-可實際使用的個人羽球裝備管理 MVP。繁體中文、深色響應式介面；資料儲存在本機 SQLite 檔案，不依賴瀏覽器快取或外部服務。
+在原本 Badminton Lab 專案內升級，沿用深色中文 UI、球拍 CRUD、分開主／橫線磅數、六項心得、詳細頁與歷史。
 
-## 啟動
+**目前狀態：程式與 SQL 已準備，本機測試通過；等待在 life-tools 手動套用 migration 與提供公開設定。尚未完成真實兩帳號隔離驗證、GitHub repository 建立及正式部署，不能視為已上線正式版。**
 
-需要 **Node.js 24 或更新版本**，沒有第三方套件，**不需要 npm install**。
+## 啟動預覽
 
-Windows：雙擊 `start.cmd`，保留啟動視窗，再用瀏覽器開啟 http://127.0.0.1:4173 。
-
-或在本資料夾開啟終端機：
+需要 Node.js 24+，沒有新增套件，也不需要 npm install。
 
 ```sh
-node server.mjs
+node preview.mjs
 ```
 
-停止：在啟動視窗按 Ctrl+C。下次執行同一命令即可繼續使用原資料。不要直接雙擊 `public/index.html`，因為表單需要本機 API。
+開啟 http://127.0.0.1:4197/ 。Windows 也可雙擊 start.cmd。預覽只提供 public/，不開啟 SQLite，不提供 /api/state 等舊私人 API。程式使用 BADMINTON_PORT 獨立設定，不沿用其他專案的 PORT。
 
-若連接埠被占用，可在 PowerShell 執行 `$env:PORT='4174'` 後再啟動，改用 http://127.0.0.1:4174 。
+## life-tools SQL migration
 
-### 手機實際使用
+1. 登入 Supabase Dashboard，確認左上角專案是 **life-tools**。
+2. 左側 **SQL Editor → New query**。
+3. 開啟 `supabase/migrations/202610030001_badminton_v2.sql`，複製全部內容（含 begin/commit），貼上並 Run。
+4. 成功後執行 `supabase/security-status.sql`：應有五張表，rls_enabled 全為 true，anon_can_select / anon_can_insert 全為 false。
+5. 若報錯，保留完整錯誤訊息；這個 migration 是單一 transaction，失敗不會留下半套資料表。不要自行刪除原有表或重建 project。
 
-電腦與手機連上同一個私人 Wi-Fi，先停止原程式，再執行：
+新增內容全部是 badminton_ 名稱，不操作 life_household_members、life_households、restock_history、restock_items，也不變更現有 Auth 設定。若相同 Badminton Lab 表已存在，migration 會報錯並回滾；不會覆蓋既有表。
+
+| 表 | 用途與關聯 |
+|---|---|
+| badminton_profiles | user_id 主鍵，直接 FK → auth.users(id) |
+| badminton_rackets | 球拍資料；(user_id,id) 複合主鍵，user_id FK → auth.users |
+| badminton_stringing_records | 完整穿線與六項心得；user_id FK → auth.users，(user_id,racket_id) FK → badminton_rackets |
+| badminton_user_options | 每個人的已用品牌、型號、重量、握把；球拍／穿線刪除後仍可快速選取 |
+| badminton_import_runs | 每個人的舊資料匯入識別與筆數，防止重複匯入 |
+
+五張表全開 RLS；authenticated 只可操作 auth.uid()=user_id 的資料，anon 無私人表權限。穿線與球拍用複合外鍵阻擋跨帳號關聯。資料函式全部 security invoker，不使用 service-role。update trigger 維護 version，避免跨裝置覆寫已變更的紀錄。
+
+RPC：badminton_snapshot（一致的個人完整資料）、badminton_import_v1（原子匯入）、badminton_security_status（僅五張表安全旗標）。這些函式只有 authenticated 可呼叫。
+
+## 取得公開設定
+
+打開 life-tools 的 **Connect**，可取得 Project URL 與 publishable key；或到 **Settings → API Keys** 複製 publishable key。將這兩項交給開發者設定 `public/config.js`：
+
+```js
+export const config = Object.freeze({
+  supabaseUrl: 'https://你的專案代碼.supabase.co',
+  supabaseKey: 'sb_publishable_...'
+});
+```
+
+這是瀏覽器允許公開的設定；權限由 RLS 決定。不要提供 database password、service-role、sb_secret_ key。程式會拒絕 secret/service-role key。參考：[Supabase API keys](https://supabase.com/docs/guides/getting-started/api-keys)。
+
+## Auth 與跨裝置
+
+- Email + Password 登入／註冊；可直接使用 life-tools 中既有的相同 Auth 帳號，不需要另建立 Supabase Project。
+- 依現有 Supabase 設定寄送 Email 確認。**不要為 Badminton Lab 修改共用的 Site URL、停用 Email 確認或重設現有使用者密碼。**
+- 到 Authentication → URL Configuration → Redirect URLs，**新增** Badminton Lab 最終網址與 http://127.0.0.1:4197/。既有網址保留。
+- 註冊請求會指定 Badminton Lab 回跳網址；確認回跳後先向 Auth 驗證 token，再保存 session。
+- 私人裝備只有 Supabase 是正式來源。localStorage 只保留 Badminton Lab 專屬 Auth session，不保存裝備、穿線或心得。
+- 兩台裝置登入同帳號後，重新整理、回到分頁或按同步即可取得新資料；前景每 30 秒同步一次。編輯表單開啟時不覆蓋輸入。
+- 登出使用 local scope，只結束此 Badminton Lab session，不全域登出同 project 的其他工具。
+- 若另一台裝置已修改該紀錄，儲存／刪除會被版本檢查擋下，請同步後重新編輯。
+
+## 舊資料匯入（保留 SQLite）
+
+盤點時找到 3 支球拍、2 筆穿線。已在本 task 的 work/mvp-backup-2026-10-03 保留 SQLite 與 JSON 備份；原始 data/badminton.sqlite 未刪除。
+
+可隨時重新唯讀匯出：
 
 ```sh
-node server.mjs --lan
+node tools/export-mvp.mjs
 ```
 
-在手機瀏覽器開啟終端機顯示的「手機連線」網址，即可共用電腦上的同一份資料。電腦需保持開機；若 Windows 防火牆阻擋，需由你允許 Node.js 在私人網路連線。**沒有登入保護，同網路的人可讀寫資料，請只在信任的私人網路使用，不要開放到網際網路。** 未加 `--lan` 時只接受本機連線。
+結果存於 `private-backups/`（不提交 Git、不部署）。正式資料庫設定完成後：
 
-## 操作順序
+1. 登入要接收資料的 Badminton Lab 帳號。
+2. 帳號與資料 → 選擇 MVP JSON 備份。
+3. 頁面先驗證 UUID、欄位、日期、評分與球拍關聯，再顯示筆數與目標帳號。
+4. 按「確認匯入雲端」。單次匯入使用資料庫 transaction，全成功才記錄匯入結果。
+5. 同一份備份再次匯入不重複建立；碰到既有相同 UUID 不覆寫，結果顯示實際新增數量。既有歷史可合併，不會清空雲端。
 
-1. 總覽 → 新增球拍，填寫品牌、型號、重量、握把與使用狀態。
-2. 球拍詳細頁 → 新增穿線，分別填寫主線、橫線磅數。
-3. 六項心得可先空白，打球後再選「編輯紀錄與心得」補上 1–10 分及文字心得。
-4. 總覽自動統計使用中球拍、最近穿線、最常穿的球線與平均磅數。
-5. 刪除需經確認；刪除球拍會連同該球拍的所有穿線及心得紀錄一起刪除。
+不要提交或公開 data/、private-backups/、使用者 token。V2 雲端 JSON 匯出可供個人備份；此版匯入只接受 schemaVersion 1 的 MVP 備份，不接受 V2 匯出檔。
 
-## 資料保存與備份
+## 手機與 PWA
 
-- 資料庫：`data/badminton.sqlite`，首次啟動自動建立。重新整理、關閉瀏覽器、停止並重啟程式都不會清除資料。
-- 完整備份與還原：**先停止程式**，複製整個 `data` 資料夾到安全位置。還原時保持程式關閉，以備份的 `data` 資料夾替換目前資料夾。請先另存目前資料，避免覆寫。
-- 穿線紀錄頁提供 JSON 匯出，包含所有球拍、穿線與心得。此版尚未提供 JSON 匯入，還原請用上述資料夾備份方式。
-- `BADMINTON_DATA_DIR` 可指定資料目錄。伺服器預設使用相對於程式檔案的固定目錄，從不同工作目錄啟動也不會弄丟資料。
-- 所有資料都留在本機，沒有帳號、第三方分析或雲端同步。
+延續卡片式深色介面，觸控按鈕至少 44px；表單字級至少 16px。Dashboard／穿線頁可直接新增穿線並選擇既有球拍。品牌、型號、重量、握把可搜尋既有值或直接輸入新增。
 
-## 統計定義
+提供 manifest、192/512 PNG icons、apple-touch-icon、service worker。iPhone Safari 可用分享 → 加入主畫面。service worker 僅快取公開介面，不快取 Supabase 回應或私人資料；需要網路才能讀寫裝備。實體 iPhone Safari 尚待上線後實測。
 
-- 目前球線：穿線日期最新的紀錄；同日多筆以新增順序較後者優先，編輯不會變更新增順序。
-- 使用時間：該筆穿線日至下一次穿線日的日曆天數；最新一筆算到今天。**不是上場時數**，停用球拍亦不推估停用日期。
-- 最常使用的球線：依「球線品牌＋型號」的穿線次數統計；次數相同時優先採目前排序最先出現者。名稱大小寫需一致。
-- 平均磅數：全部穿線紀錄的主線平均、橫線平均分開計算，含已停用球拍，取一位小數。
-- 未評分為 `null`，不視為 0。錯磅為獨立布林欄位，由使用者標記，不推測其意義。
-- 價格使用 NT$；主線與橫線限制 1–50 lb（資料驗證範圍，不是建議磅數），日期不得晚於今天。
+## 獨立 GitHub / Pages 部署
 
-## 專案結構
+方案是專屬 badminton-lab repository + GitHub Pages 靜態網站 + Supabase，部署內容只包含 public/。目前已有本機獨立 Git repository，保留 MVP 初始 commit；尚未建立遠端或公開 source。
 
-```text
-badminton-lab/
-  public/
-    index.html       頁面架構與導覽
-    styles.css       共用深色主題、桌面與手機版面
-    app.js           表單、路由、Dashboard、詳細頁
-  repository.mjs     SQLite 資料層、欄位驗證與 CRUD
-  server.mjs         本機 HTTP、API 與靜態檔案服務
-  tests/            自動化資料層與 API 測試
-  data/             執行時建立的 SQLite（不提交版本庫）
-  start.cmd          Windows 啟動入口
-  package.json       啟動／測試指令，無外部相依套件
-```
+`.github/workflows/pages.yml` 已準備好：push main → 跑測試 → 上傳 public/ → 部署 github-pages。GitHub repository 建立後，在 Settings → Pages 選 GitHub Actions。若使用公開 repo，需要先取得你的明確同意，因為程式、migration 和公開設定都會公開；私人裝備及備份不會上傳。
 
-前端集中透過 `api()` 存取資料；資料層集中在 Repository。未來可替換 Repository 或 API 後端，不必改掉球拍／穿線的欄位設計。資料庫 `user_version=1`；未來 schema 變更需新增版本遷移，不能直接覆寫資料。
-
-API：`GET /api/state`、`GET /api/export`；`POST /api/rackets`、`PUT/DELETE /api/rackets/:id`；穿線使用對應的 `/api/records` 路徑。API 與前端都進行驗證，SQL 使用參數化查詢。
+正式網址只在實際部署成功後回報，不以預估 URL 當完成證明。GitHub Pages 的 static app 不需部署 Node/SQLite。不要使用家庭補貨助手的 repository、workflow 或部署目標。
 
 ## 測試
 
@@ -79,23 +100,44 @@ API：`GET /api/state`、`GET /api/export`；`POST /api/rackets`、`PUT/DELETE /
 node --test tests/*.test.mjs
 ```
 
-測試使用獨立暫存資料庫，不改動個人資料。手動回歸：新增球拍 → 新增兩筆不同日期穿線 → 編輯六項評分與心得 → 重新整理 → 重啟程式 → 確認紀錄保留 → 測試取消刪除與刪除測試紀錄 → 檢查 Dashboard 更新。
+目前 13 組本機測試通過：保留 V1 後端回歸，並新增 V2 設定／秘密 key 防護、欄位映射、評分分母、選項、token 更新、版本衝突、匯入驗證與 Email callback 測試。V2 HTTP 使用測試替身，**不代表真實 Supabase RLS 已通過**。
 
-## 限制與技術債
+真實隔離測試工具：`node tools/verify-rls.mjs`。需要 migration 完成、config.js 設定，以及兩個不同且已確認 Email 的測試帳號。工具從 stdin 讀取登入資料、不寫入檔案、不印 token；建立獨立 UUID 測試資料並檢查：
 
-- 這是本機應用程式，需讓 Node.js 程式保持執行。預設只監聽 `127.0.0.1`；手機需自行啟用 `--lan` 並連上同一個私人網路，沒有遠端／離線同步。
-- 不能直接部署到 GitHub Pages，因為 SQLite API 需要伺服器。若下一版要真正跨裝置使用，需要部署後端並先設計存取控制。
-- 無帳號、AI、社群、雲端同步，符合本輪範圍。
-- 無自動備份、JSON 匯入或資源回收筒；刪除無法在 UI 撤銷，請先備份。
-- 多分頁編輯同一筆資料採最後儲存者優先，沒有衝突提示。
-- 紀錄一次載入，尚未分頁；適合個人少量資料。
-- 純 JavaScript 沒有型別編譯；日後增加功能建議拆分表單與統計模組。金額使用 SQLite REAL，適合個人記錄，非會計系統。
-- 可選的 WebMCP 唯讀工具僅在瀏覽器支援時註冊，不影響一般使用。
+- A 可建立／讀取自己的球拍與穿線。
+- B 不能讀取、修改或刪除 A 的球拍、穿線與 profile。
+- B 不能冒用 A user_id，也不能關聯 A 球拍。
+- 未登入者不能讀取五張表或 snapshot。
+- 真實資料庫五張表 RLS=true、anon 權限撤銷。
+- 結束時只清理本次測試建立的球拍／穿線 UUID 與專屬選項。
 
-## 下一版最值得增加的五項功能
+尚未執行此真實測試；登入資料需透過受控 stdin 傳入，請不要貼真實帳號密碼在聊天或提交 repository。執行前會與你確認測試帳號及操作範圍。
 
-1. JSON 匯入與自動備份，讓換機與還原更容易。
-2. 球線拆除／斷線日期及原因，讓壽命統計更準確。
-3. 上場次數與時數記錄，區分日曆天數與實際使用量。
-4. 球線設定、磅數與心得的比較圖表，支援日期與球拍篩選。
-5. 手機可安裝的 PWA 與跨裝置存取方案，在資料保護設計完成後擴充。
+## 檔案結構
+
+```text
+public/               原 UI + Auth + cloud/data 模組 + PWA
+supabase/migrations/  life-tools 專用新增 SQL
+supabase/security-status.sql
+tools/export-mvp.mjs  舊 SQLite 唯讀匯出
+tools/verify-rls.mjs   真實兩帳號 API 隔離測試
+preview.mjs           V2 靜態預覽（4197）
+server.mjs / repository.mjs  保留的 V1 資料維護與回歸測試
+private-backups/      本機私人備份（忽略、不部署）
+tests/                本機回歸測試
+.github/workflows/pages.yml
+README-V1.md          原 MVP 文件
+```
+
+V2 請使用 preview.mjs，不用舊 server.mjs 啟動介面。
+
+## 待完成／限制
+
+- 等待 life-tools SQL 實際執行及公開 URL/key 設定。
+- 等待真實雲端 CRUD、匯入、A/B/anon 隔離與 RLS 開啟驗證。
+- 等待專屬遠端 repository、公開授權與正式部署。
+- 未實測實體 iPhone／Android、大量資料效能及 Email 送信。送信能力沿用 life-tools 既有設定；任何 SMTP 調整都需另外確認。
+- 同步是重新整理／前景輪詢，沒有 WebSocket 秒級即時推送。
+- 尚無實際上場時數、斷線日期、軟刪除復原與 V2 JSON 還原。
+
+詳細進度見 V2_STATUS.md；歷史 MVP 測試報告保留在 TEST_REPORT.md。

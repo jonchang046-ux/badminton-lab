@@ -1,2 +1,9 @@
 data/
 *.sqlite*
+private-backups/
+.env
+.env.*
+!.env.example
+*.log
+node_modules/
+v2-mobile-preview.jpg
