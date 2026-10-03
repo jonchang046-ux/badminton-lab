@@ -1,0 +1,31 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {mkdtempSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import net from 'node:net';
+import {once} from 'node:events';
+import {fileURLToPath} from 'node:url';
+const root=path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+test('HTTP 完整 CRUD、重啟持久化、匯出、錯誤回應、跨來源保護',async()=>{
+ const probe=net.createServer();probe.listen(0,'127.0.0.1');await once(probe,'listening');const port=probe.address().port;await new Promise(r=>probe.close(r));
+ const dataDir=mkdtempSync(path.join(tmpdir(),'badminton-api-'));let child;
+ const start=()=>new Promise((resolve,reject)=>{child=spawn(process.execPath,['server.mjs'],{cwd:root,env:{...process.env,PORT:String(port),BADMINTON_DATA_DIR:dataDir},stdio:['ignore','pipe','pipe']});const timer=setTimeout(()=>reject(new Error('啟動逾時')),8000);child.once('error',reject);child.stdout.on('data',x=>{if(x.toString().includes('running at')){clearTimeout(timer);resolve();}});child.once('exit',code=>{clearTimeout(timer);if(code)reject(new Error(`啟動失敗 ${code}`));});});
+ const stop=async()=>{const exit=once(child,'exit');child.kill();await exit;};
+ const request=async(route,method='GET',value,headers={})=>{const r=await fetch(`http://127.0.0.1:${port}${route}`,{method,headers:{'Content-Type':'application/json',...headers},body:value===undefined?undefined:JSON.stringify(value)});return {status:r.status,data:await r.json()};};
+ try {await start();assert.equal((await fetch(`http://127.0.0.1:${port}`)).status,200);
+ const body={brand:'測試品牌',model:'API 測試拍',weight:'4U',grip:'G5',notes:'<script>alert(1)</script>',active:true};
+ const added=await request('/api/rackets','POST',body);assert.equal(added.status,201);const id=added.data.id;
+ assert.equal((await request(`/api/rackets/${id}`,'PUT',{...body,active:false})).status,200);
+ const record={racketId:id,date:'2026-01-01',stringBrand:'YONEX',stringModel:'BG80',mainTension:25,crossTension:27,mismatch:true,shop:'',price:null,notes:'',review:'控制穩定',smash:8,control:9,repulsion:7,comfort:6,durability:null,satisfaction:8};
+ const addRecord=await request('/api/records','POST',record);assert.equal(addRecord.status,201);const rid=addRecord.data.id;
+ assert.equal((await request(`/api/records/${rid}`,'PUT',{...record,mainTension:26})).status,200);
+ assert.equal((await request('/api/records','POST',{...record,mainTension:80})).status,400);
+ assert.equal((await request('/api/rackets','POST',body,{Origin:'https://example.com'})).status,403);
+ assert.equal((await request('/api/rackets','POST',body,{'Content-Type':'text/plain'})).status,415);
+ await stop();await start();const saved=await request('/api/state');assert.equal(saved.data.rackets[0].active,false);assert.equal(saved.data.records[0].mainTension,26);assert.equal(saved.data.records[0].crossTension,27);assert.equal((await request('/api/export')).data.records.length,1);
+ assert.equal((await request(`/api/records/${rid}`,'DELETE')).status,200);assert.equal((await request('/api/state')).data.records.length,0);
+ await request('/api/records','POST',record);assert.equal((await request(`/api/rackets/${id}`,'DELETE')).status,200);assert.equal((await request('/api/state')).data.records.length,0);assert.equal((await request('/api/state')).data.rackets.length,0);
+ }finally{if(child&&child.exitCode===null)await stop();}
+});
