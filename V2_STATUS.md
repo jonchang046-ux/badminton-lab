@@ -1,6 +1,6 @@
 # Badminton Lab V2 進度與驗證
 
-日期：2026-10-03。沿用原專案的 V2 改造，網站已公開部署；正式網址登入與 Email 確認回跳仍在驗證。
+日期：2026-10-03。沿用原專案的 V2 改造，網站已公開部署；正式 A 登入、原有資料讀取與重新整理已通過。正式精確回跳 URL 已保存，Email 送信／確認連結完整流程尚未實測。
 
 - 正式網站：https://jonchang046-ux.github.io/badminton-lab/
 - 獨立 repository：https://github.com/jonchang046-ux/badminton-lab
@@ -58,6 +58,9 @@
 - B 停用球拍後首頁使用中為 0，另一分頁亦取得保存狀態；正常刪除穿線後歷史為 0，再刪除球拍成功。
 - 經使用者同意清理指定 QA：A／B 測試 UUID 均不存在，9 個測試專屬選項移除；A 保留原有 3／2、B 為 0／0。
 - 登入後 320／390px 手機與 1440px 桌面檢查未見橫向溢出。未以此聲稱已實測 iPhone Safari。
+- 正式網址由使用者登入 A，Dashboard 正確顯示原有 3 支球拍、2 筆穿線、HP-63 與 25／27 lb；重新整理仍保留登入並取得相同資料。
+- 正式 Preview 實際可用寬度 319px，Dashboard／新增穿線表單未見橫向溢出；文字輸入與選單 16px、表單操作按鈕至少 44px。此次 viewport override 未改變 Preview 的實際寬度，不以此新增 1440px 正式站驗證宣稱；先前本機多尺寸驗證仍有效。
+- 正式網站新增穿線可選取三支既有球拍，開啟後取消，沒有修改原有裝備或額外留下 QA 資料。
 
 ## 雲端與部署狀態
 
@@ -67,18 +70,18 @@
 4. 真實 A/B／未登入者 RLS 隔離與五張表 RLS=true 已通過，不將單元測試替身當作 RLS 證據。
 5. 待實體 iPhone Safari、加入主畫面及跨實體裝置驗證。
 6. 已取得 public／部署授權，建立專屬遠端 repository，完整推送既有 Git 歷史；Pages run 37094344632 attempt 2 成功。正式首頁與 public 資產 HTTP 200，私人路徑與本機 QA 均 404。
-7. 正式網址的 A 登入與 Supabase 精確回跳網址設定仍在確認；不改共用 Site URL 或 Email 確認設定。
+7. 正式 A 登入與重新整理取得原有 3／2 已通過。Supabase Redirect URLs 已保存 `https://jonchang046-ux.github.io/badminton-lab/`；共用 Site URL、Email 確認與 SMTP 保留。Email 確認連結完整流程尚未實測。
 
 ## 下一步
 
-正式網址已顯示 Badminton Lab；接著確認 A 在正式網址讀取原有 3／2 資料，以及 Email 確認可回到 App。實體手機／Safari、送信與跨實體裝置保留為未驗證項目。
+已可在正式網址使用既有 life-tools 帳號登入並讀取原有資料。建議接著用手機 Safari 開啟相同網址、登入同帳號確認 3／2 資料，再嘗試加入主畫面。實體手機／Safari、送信、跨實體裝置與一般瀏覽器備份下載保留為未驗證項目。
 
 ## 目前限制／技術債
 
 - 已修正的 bug：資料層把原生 fetch 當成物件方法呼叫，瀏覽器拒絕執行，誤顯示網路故障。新增回歸測試先重現失敗、修正後通過，並用不存在的帳號實際確認 Auth 回應。密碼／Email 確認錯誤已中文化。
 
 - 已修正的 bug：背景同步曾重繪帳號頁、清除已選匯入檔案；public/app.js 改為保留匯入表單，實際輪詢及手動同步後匯入成功。
-- V2 備份匯出點擊後沒有 console 錯誤，但 Preview 下載事件逾時，尚未確認下載檔案落地，須在一般瀏覽器補測。
+- V2 備份匯出在本機及正式網站點擊後沒有 console 錯誤，但 Preview 下載事件逾時，尚未確認下載檔案落地，須在一般瀏覽器補測；不視為已通過，也尚無證據斷定是程式或 Preview 的限制。
 - GitHub Actions 使用的部分官方 action 有 Node 20 相容性警告，runner 已改用 Node 24，部署成功；日後可另行升級 action 版本，這次未改 build 流程。
 - 純 REST Auth client 沒有依賴 SDK，已處理基本 session/refresh，但 MFA、忘記密碼、社群登入不在本輪。
 - snapshot 一次載入所有個人資料；沒有筆數硬上限，但大量資料尚需分頁與效能設計。
@@ -100,7 +103,9 @@
 | preview.mjs、start.cmd、package.json、.github/workflows/pages.yml | 獨立 4197 預覽與 Pages 部署準備 |
 | .gitignore、README.md、README-V1.md、V2_STATUS.md | 私人資料忽略、操作說明、歷史文件保留與測試狀態 |
 
-影響僅限 Badminton Lab 的主要檢視與獨立部署；SQLite 和 V1 repository/server 原碼保留。已公開部署，實際帳號、資料功能與隔離測試通過；正式網址登入與 Email 回跳仍在確認。
+影響僅限 Badminton Lab 的主要檢視與獨立部署；SQLite 和 V1 repository/server 原碼保留。已公開部署，實際帳號、資料功能與隔離測試通過；正式 A 登入及重新整理讀取已通過，正式精確回跳網址已保存。Email 確認流程尚未實測。
+
+本次交付收尾只修改 README.md、V2_STATUS.md、supabase/VALIDATION.md，更新正式環境驗證與限制；未修改功能程式、樣式、套件或 build 流程，不影響其他頁面的行為。
 
 ## 下一版最值得增加的 5 個功能
 

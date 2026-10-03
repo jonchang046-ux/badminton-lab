@@ -4,7 +4,7 @@
 
 正式網站：[Badminton Lab](https://jonchang046-ux.github.io/badminton-lab/)。獨立原始碼：[jonchang046-ux/badminton-lab](https://github.com/jonchang046-ux/badminton-lab)。
 
-**目前狀態：網站已公開部署，首頁與公開資產 HTTP 200。life-tools migration、兩個真實帳號登入、雲端 CRUD／重新整理保存、MVP 舊資料匯入與 12 項實際 API 隔離測試已通過。經使用者同意清理 QA 後，A 保留原有 3 支球拍、2 筆穿線，B 無測試紀錄。正式網址的 A 登入及 Email 回跳設定仍在確認中。**
+**目前狀態：網站已公開部署，首頁與公開資產 HTTP 200。life-tools migration、兩個真實帳號登入、雲端 CRUD／重新整理保存、MVP 舊資料匯入與 12 項實際 API 隔離測試已通過。經使用者同意清理 QA 後，A 保留原有 3 支球拍、2 筆穿線，B 無測試紀錄。A 已在正式網址登入，重新整理後仍正確取得原有 3／2 資料；正式精確回跳網址已加入 Supabase。Email 送信／確認連結完整流程仍未實測。**
 
 ## 啟動預覽
 
@@ -18,13 +18,15 @@ node preview.mjs
 
 ## life-tools SQL migration
 
+目前 life-tools 已套用並驗證成功，不必重跑 migration。以下保留為首次設定其他環境的操作說明。
+
 1. 登入 Supabase Dashboard，確認左上角專案是 **life-tools**。
 2. 左側 **SQL Editor → New query**。
 3. 開啟 `supabase/migrations/202610030001_badminton_v2.sql`，複製全部內容（含 begin/commit），貼上並 Run。
 4. 成功後執行 `supabase/security-status.sql`：應有五張表，rls_enabled 全為 true，anon_can_select / anon_can_insert 全為 false。
 5. 若報錯，保留完整錯誤訊息；這個 migration 是單一 transaction，失敗不會留下半套資料表。不要自行刪除原有表或重建 project。
 
-新增內容全部是 badminton_ 名稱，不操作 life_household_members、life_households、restock_history、restock_items，也不變更現有 Auth 設定。若相同 Badminton Lab 表已存在，migration 會報錯並回滾；不會覆蓋既有表。
+Migration 新增內容全部是 badminton_ 名稱，不操作 life_household_members、life_households、restock_history、restock_items，也不變更現有 Auth 設定。若相同 Badminton Lab 表已存在，migration 會報錯並回滾；不會覆蓋既有表。
 
 | 表 | 用途與關聯 |
 |---|---|
@@ -55,7 +57,8 @@ export const config = Object.freeze({
 
 - Email + Password 登入／註冊；可直接使用 life-tools 中既有的相同 Auth 帳號，不需要另建立 Supabase Project。
 - 依現有 Supabase 設定寄送 Email 確認。**不要為 Badminton Lab 修改共用的 Site URL、停用 Email 確認或重設現有使用者密碼。**
-- 到 Authentication → URL Configuration → Redirect URLs，**新增** Badminton Lab 最終網址與 http://127.0.0.1:4197/。既有網址保留。
+- Authentication → URL Configuration → Redirect URLs 已新增唯一正式精確網址 `https://jonchang046-ux.github.io/badminton-lab/`。原 Site URL `http://localhost:3000` 保留，Email 確認與 SMTP 未變更。
+- 若日後要測試本機註冊 Email 回跳，另新增 `http://127.0.0.1:4197/`；此次未加入本機回跳網址。不要取代既有網址或使用萬用字元。
 - 註冊請求會指定 Badminton Lab 回跳網址；確認回跳後先向 Auth 驗證 token，再保存 session。
 - 私人裝備只有 Supabase 是正式來源。localStorage 只保留 Badminton Lab 專屬 Auth session，不保存裝備、穿線或心得。
 - 兩台裝置登入同帳號後，重新整理、回到分頁或按同步即可取得新資料；前景每 30 秒同步一次。編輯表單開啟時不覆蓋輸入。
@@ -94,7 +97,7 @@ node tools/export-mvp.mjs
 
 `.github/workflows/pages.yml`：push main → 跑測試 → 上傳 public/ → 部署 github-pages。Settings → Pages 已選 GitHub Actions。首次 push 在尚未啟用 Pages 時遇到 configure-pages 404；啟用後重跑成功，沒有更換 build 流程或套件。
 
-成功紀錄：[Deploy Badminton Lab，run 37094344632，attempt 2](https://github.com/jonchang046-ux/badminton-lab/actions/runs/37094344632)。部署後已在瀏覽器確認 Badminton Lab 登入頁；__qa/、api/state、data/badminton.sqlite 與 private-backups 測試路徑均為 HTTP 404。
+成功紀錄：[Deploy Badminton Lab，run 37094344632，attempt 2](https://github.com/jonchang046-ux/badminton-lab/actions/runs/37094344632)；後續文件版 [run 37094857533](https://github.com/jonchang046-ux/badminton-lab/actions/runs/37094857533) 亦成功。正式網站已由使用者登入 A，確認原有球拍與穿線、25／27 lb 磅數及重新整理保存；__qa/、api/state、data/badminton.sqlite 與 private-backups 測試路徑均為 HTTP 404。
 
 正式網址只在實際部署成功後回報，不以預估 URL 當完成證明。GitHub Pages 的 static app 不需部署 Node/SQLite。不要使用家庭補貨助手的 repository、workflow 或部署目標。
 
@@ -142,9 +145,9 @@ V2 請使用 preview.mjs，不用舊 server.mjs 啟動介面。
 
 - life-tools 公開 URL/key、SQL migration 與資料庫角色隔離驗證已完成。
 - 真實雲端 CRUD、使用狀態、歷史、Dashboard、舊資料匯入與 A/B/anon 隔離已通過；QA 已清理，原資料保留。
-- 專屬公開 repository、公開授權與正式部署已完成；正式帳號登入與 Email 確認回跳待補驗。
+- 專屬公開 repository、公開授權與正式部署已完成；正式 A 登入與重新整理讀取已通過。正式精確回跳 URL 已保存，Email 寄送／確認連結仍待補驗。
 - 320／390px 手機及 1440px 桌面檢查未見橫向溢出。未實測實體 iPhone／Android、跨實體裝置、大量資料及 Email 送信。送信能力沿用 life-tools 設定；SMTP 調整需另外確認。
-- 已點擊 V2 備份匯出，沒有瀏覽器錯誤；Preview 下載事件逾時，尚未確認下載檔案落地，須在一般瀏覽器補測。
+- 本機及正式網站皆已點擊 V2 備份匯出，沒有瀏覽器錯誤；Preview 下載事件逾時，尚未確認下載檔案落地，須在一般瀏覽器補測。此次不將它列為已通過的功能。
 - 同步是重新整理／前景輪詢，沒有 WebSocket 秒級即時推送。
 - 尚無實際上場時數、斷線日期、軟刪除復原與 V2 JSON 還原。
 

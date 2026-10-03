@@ -1,6 +1,6 @@
 # life-tools 雲端驗證紀錄
 
-日期：2026-10-03。範圍僅 Badminton Lab；未修改家庭補貨資料表或既有帳號。正式 Auth 回跳網址設定仍待確認，Site URL 與 Email 確認保留。
+日期：2026-10-03。範圍僅 Badminton Lab；未修改家庭補貨資料表或既有帳號。正式 Auth 精確回跳網址已新增；Site URL、Email 確認與 SMTP 保留。
 
 ## Migration 已確認
 
@@ -60,13 +60,19 @@
 - B 停用自己的 QA 球拍，首頁使用中數量從 1 改為 0；另一個既有分頁也取得停用狀態。
 - 320／390px 手機與 1440px 桌面沒有觀察到橫向溢出；觸控按鈕至少 44px，輸入文字 16px。
 - 經使用者確認，只刪除指定 QA 資料。在 B 主 App 完成穿線刪除，球拍仍存在且歷史為 0；再刪除球拍。A QA 球拍及兩筆穿線、9 個專屬選項由有 UUID／內容檢查的交易清理。最終 A 保留原有 3／2、B 為 0／0，所有 QA UUID 已不存在。沒有清除 Auth profile 或匯入識別紀錄。
-- 實體手機／Safari、跨實體裝置與 Email 送信尚未驗證。匯出點擊無 console 錯誤，但 Preview 下載事件逾時，未確認檔案落地。
+- 實體手機／Safari、跨實體裝置與 Email 送信尚未驗證。本機及正式網站匯出點擊無 console 錯誤，但 Preview 下載事件逾時，未確認檔案落地。
 
 ## 正式部署
 
 獨立公開 repository：[jonchang046-ux/badminton-lab](https://github.com/jonchang046-ux/badminton-lab)，已取得使用者同意。Pages [run 37094344632 attempt 2](https://github.com/jonchang046-ux/badminton-lab/actions/runs/37094344632) 成功，正式網址 https://jonchang046-ux.github.io/badminton-lab/ 顯示 Badminton Lab 登入頁。HTTP 檢查首頁、app.js、config.js、manifest、sw.js、PNG icon 均 200；QA 頁、SQLite、私人備份與舊 API 測試路徑均 404。
 
-life-tools 的 URL Configuration 原設定 Site URL=http://localhost:3000，沒有 Redirect URLs。已準備只新增正式精確網址，正在等待確認；不變更 Site URL、Email 確認、SMTP 或家庭補貨設定。正式網址的 A 登入讀取仍待使用者完成，不能把本機登入當成正式網址登入證明。
+life-tools 的 URL Configuration 原設定 Site URL=http://localhost:3000，沒有 Redirect URLs。已新增並確認保存唯一正式精確網址 `https://jonchang046-ux.github.io/badminton-lab/`；不變更 Site URL、Email 確認、SMTP 或家庭補貨設定。本機 4197 回跳網址未加入。
+
+使用者已在正式網址輸入 A 帳號並確認登入。實際 Dashboard 顯示原有 3 支使用中球拍、2 筆穿線、HP-63 與主／橫線 25／27 lb；重新整理後仍正確取得相同資料。這是正式 origin 的真實 Auth／雲端讀取證據，不以本機登入代替。正式 origin 此次未新增或改寫原有裝備；CRUD 與隔離另由上述同一資料層的實際本機操作及 API 測試驗證。
+
+正式 Preview 實際可用寬度 319px，Dashboard 與新增穿線表單未見橫向溢出，文字輸入／選單 16px、表單按鈕至少 44px。viewport override 未改變此 Preview 的實際寬度，因此此次未額外宣稱正式站 1440px 驗證。公開資產與先前本機多尺寸檢查已完成；實體 Safari、加入主畫面仍待實測。
+
+正式登入與 Supabase 回跳設定的畫面保留於本 task 的 work/badminton-live-A-mobile.jpg 與 work/badminton-auth-redirect-saved.jpg，不提交含個人帳號的畫面至公開 repository。尚未測試 Email 寄送與確認連結完整回跳。
 
 ## 已修正問題
 
@@ -74,7 +80,7 @@ life-tools 的 URL Configuration 原設定 Site URL=http://localhost:3000，沒�
 
 修正後使用不存在的 example.invalid 測試帳號，真實瀏覽器已收到 Supabase 的 Invalid login credentials，後續也確認中文訊息「Email 或密碼不正確，請重新確認」。此為初步連線驗證；後續 A、B 已分別實際登入成功。沒有由工具建立 Auth 測試帳號或寄送 Email。
 
-匯入期間發現背景同步重繪帳號頁，可能清除已選檔案。已在 public/app.js 保留匯入表單，實測輪詢與手動同步後仍可完成匯入。上述測試不代表正式版已上線。
+匯入期間發現背景同步重繪帳號頁，可能清除已選檔案。已在 public/app.js 保留匯入表單，實測輪詢與手動同步後仍可完成匯入。功能與 API 測試在本機進行，另有上述正式部署、登入與重新整理驗證。
 
 ## Advisor 結果
 
