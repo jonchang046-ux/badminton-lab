@@ -35,7 +35,7 @@
 
 穿線用 (user_id,racket_id) 複合外鍵 → badminton_rackets(user_id,id)，避免跨帳號掛球拍。相關歷史查詢有索引。SQL 不修改現有 life_household_members、life_households、restock_history、restock_items，不變更共用 Auth 設定。
 
-使用者已手動套用，唯讀查詢確認五張表、RLS policies、外鍵與 SECURITY INVOKER 函式均已建立。真實未登入 API 與資料庫角色隔離測試已通過；實際帳號登入測試仍待完成，詳見 supabase/VALIDATION.md。
+使用者已手動套用，唯讀查詢確認五張表、RLS policies、外鍵與 SECURITY INVOKER 函式均已建立。真實未登入 API、資料庫角色隔離與 A/B 各自登入的 12 項 API 隔離測試已通過，詳見 supabase/VALIDATION.md。
 
 ## 已執行驗證
 
@@ -49,25 +49,32 @@
 - Supabase 連線後唯讀確認 life-tools 為 ACTIVE_HEALTHY；家庭補貨四張表仍啟用 RLS，沒有修改。
 - public/config.js 已設定 life-tools 的公開 URL／publishable key；真實 Auth settings 請求成功，Email 登入啟用、註冊啟用、Email 確認保留。
 - Migration 前的真實 REST 請求曾回報 PGRST205／404；使用者套用後已確認五張表建立，未登入請求改為 HTTP 401／42501，詳細結果見 supabase/VALIDATION.md。
+- A／B 由使用者實際登入；A 的新增、編輯、六項心得、主橫磅數、錯磅、店家與價格、重新整理保存、歷史最新標記均通過。
+- A 透過 App 匯入原有 3 支球拍、2 筆穿線，再匯入同檔不重複建立；原 SQLite 與備份保留。
+- B 實際 GET／PATCH／DELETE A 的 QA 球拍與穿線皆無資料／無異動；profile／選項／匯入紀錄隔離、冒用 user_id 與跨帳號球拍關聯拒絕、五張表 RLS=true 均通過。
+- B 停用球拍後首頁使用中為 0，另一分頁亦取得保存狀態；正常刪除穿線後歷史為 0，再刪除球拍成功。
+- 經使用者同意清理指定 QA：A／B 測試 UUID 均不存在，9 個測試專屬選項移除；A 保留原有 3／2、B 為 0／0。
+- 登入後 320／390px 手機與 1440px 桌面檢查未見橫向溢出。未以此聲稱已實測 iPhone Safari。
 
 ## 雲端與部署狀態
 
 1. life-tools SQL migration 已套用並確認。資料庫角色的 CRUD／版本／匯入／隔離驗證通過，測試異動全部回滾。
 2. Project URL／publishable key 已透過 Supabase 連線取得並設定；五張表與未登入 API 拒絕已確認。
-3. 真實 Supabase Auth、球拍／穿線 CRUD、完整 Dashboard 與匯入流程的瀏覽器回歸。
-4. 真實 A/B／未登入者 RLS 隔離測試與五張表 RLS=true 確認。工具已提供，不將本機測試替身結果當作 RLS 證據。
-5. 實體 iPhone Safari 與加入主畫面驗證。
-6. 專屬 GitHub 遠端 repository 建立、public 授權、正式部署與正式 URL。
+3. 真實 Supabase Auth、球拍／穿線 CRUD、Dashboard 與舊資料匯入瀏覽器回歸已通過。
+4. 真實 A/B／未登入者 RLS 隔離與五張表 RLS=true 已通過，不將單元測試替身當作 RLS 證據。
+5. 待實體 iPhone Safari、加入主畫面及跨實體裝置驗證。
+6. 待專屬 GitHub 遠端 repository 建立、public 授權、正式部署與正式 URL。
 
 ## 下一步
 
-Migration 與公開設定已完成。已重現並修正登入的原生 fetch receiver 錯誤，瀏覽器可收到 Supabase Auth 回應；等待使用者重新整理並登入，再進行瀏覽器操作與兩帳號 API 隔離測試。通過後再完成 GitHub repo／Pages，並取得公開 source 的明確確認。
+雲端功能、原資料匯入與兩帳號隔離已完成，QA 已依確認清理。接著取得公開 source 的明確確認，建立專屬 GitHub repo／Pages，驗證正式網址。
 
 ## 目前限制／技術債
 
 - 已修正的 bug：資料層把原生 fetch 當成物件方法呼叫，瀏覽器拒絕執行，誤顯示網路故障。新增回歸測試先重現失敗、修正後通過，並用不存在的帳號實際確認 Auth 回應。密碼／Email 確認錯誤已中文化。
 
-- 登入後的選項、表單與歷史流程仍需真實雲端 UI QA，不能只依單元測試推定完成。
+- 已修正的 bug：背景同步曾重繪帳號頁、清除已選匯入檔案；public/app.js 改為保留匯入表單，實際輪詢及手動同步後匯入成功。
+- V2 備份匯出點擊後沒有 console 錯誤，但 Preview 下載事件逾時，尚未確認下載檔案落地，須在一般瀏覽器補測。
 - 純 REST Auth client 沒有依賴 SDK，已處理基本 session/refresh，但 MFA、忘記密碼、社群登入不在本輪。
 - snapshot 一次載入所有個人資料；沒有筆數硬上限，但大量資料尚需分頁與效能設計。
 - PWA 只提供公開 shell 離線快取，沒有離線私人紀錄或待送佇列。
@@ -88,4 +95,12 @@ Migration 與公開設定已完成。已重現並修正登入的原生 fetch rec
 | preview.mjs、start.cmd、package.json、.github/workflows/pages.yml | 獨立 4197 預覽與 Pages 部署準備 |
 | .gitignore、README.md、README-V1.md、V2_STATUS.md | 私人資料忽略、操作說明、歷史文件保留與測試狀態 |
 
-影響僅限 Badminton Lab 的主要檢視與部署流程；現有 SQLite 和 V1 repository/server 原碼保留。公開設定與 SQL 已完成，正式雲端裝備功能仍需實際帳號與瀏覽器測試。
+影響僅限 Badminton Lab 的主要檢視與部署流程；SQLite 和 V1 repository/server 原碼保留。實際帳號與瀏覽器功能、安全測試已完成，正式上線仍待部署。
+
+## 下一版最值得增加的 5 個功能
+
+1. 忘記密碼／重設密碼流程，讓公開網站可自行恢復帳號。
+2. 拆線／斷線日期，區分最後設定與實際仍在使用的球線。
+3. 上場次數／時數，讓耐打度與成本比較更有依據。
+4. V2 備份還原與匯入預覽，便於搬移資料或從備份恢復。
+5. 歷史篩選與分頁，快速查找線材、磅數與日期，支援多年紀錄。

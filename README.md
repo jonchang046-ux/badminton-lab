@@ -2,7 +2,7 @@
 
 在原本 Badminton Lab 專案內升級，沿用深色中文 UI、球拍 CRUD、分開主／橫線磅數、六項心得、詳細頁與歷史。
 
-**目前狀態：使用者已在 life-tools 套用 migration，五張表與 RLS／關聯已確認；公開設定、本機測試、真實未登入 API 拒絕與資料庫角色隔離測試通過。仍待實際帳號登入與瀏覽器流程驗證、GitHub repository 建立及正式部署，不能視為已上線正式版。**
+**目前狀態：life-tools migration、兩個真實帳號登入、雲端 CRUD／重新整理保存、MVP 舊資料匯入與 12 項實際 API 隔離測試已通過。經使用者同意清理 QA 後，A 保留原有 3 支球拍、2 筆穿線，B 無測試紀錄。仍待 GitHub repository 建立及正式部署，不能視為已上線正式版。**
 
 ## 啟動預覽
 
@@ -12,7 +12,7 @@
 node preview.mjs
 ```
 
-開啟 http://127.0.0.1:4197/ 。Windows 也可雙擊 start.cmd。預覽只提供 public/，不開啟 SQLite，不提供 /api/state 等舊私人 API。程式使用 BADMINTON_PORT 獨立設定，不沿用其他專案的 PORT。
+開啟 http://127.0.0.1:4197/ 。Windows 也可雙擊 start.cmd。預覽提供 public/ 與兩個明列的本機 QA 頁面，不開啟 SQLite，不提供 /api/state 等舊私人 API。程式使用 BADMINTON_PORT 獨立設定，不沿用其他專案的 PORT。正式 Pages 只部署 public/，不包含 QA 頁面。
 
 ## life-tools SQL migration
 
@@ -62,7 +62,7 @@ export const config = Object.freeze({
 
 ## 舊資料匯入（保留 SQLite）
 
-盤點時找到 3 支球拍、2 筆穿線。已在本 task 的 work/mvp-backup-2026-10-03 保留 SQLite 與 JSON 備份；原始 data/badminton.sqlite 未刪除。
+盤點時找到 3 支球拍、2 筆穿線。已在本 task 的 work/mvp-backup-2026-10-03 保留 SQLite 與 JSON 備份；原始 data/badminton.sqlite 未刪除。已透過 A 帳號的實際匯入介面將 3／2 筆舊資料存入 Supabase，再次匯入同檔顯示「這份備份已匯入，不會重複建立」，並由資料庫筆數確認。
 
 可隨時重新唯讀匯出：
 
@@ -100,7 +100,9 @@ node tools/export-mvp.mjs
 node --test tests/*.test.mjs
 ```
 
-目前 15 組本機測試通過：保留 V1 後端回歸，並新增 V2 設定／秘密 key 防護、欄位映射、評分分母、選項、token 更新、版本衝突、匯入驗證、Email callback、瀏覽器 fetch receiver 與中文 Auth 錯誤測試。V2 單元測試的 HTTP 使用測試替身，**不代表真實帳號 API 隔離已通過**；另有真實未登入 API 與資料庫角色測試，詳見 supabase/VALIDATION.md。
+目前 15 組本機測試通過：保留 V1 後端回歸，並新增 V2 設定／秘密 key 防護、欄位映射、評分分母、選項、token 更新、版本衝突、匯入驗證、Email callback、瀏覽器 fetch receiver 與中文 Auth 錯誤測試。單元測試的 HTTP 使用測試替身；另已完成真正 A/B Auth session 的 12 項 API 隔離測試、真實未登入 API 拒絕與資料庫交易驗證，詳見 supabase/VALIDATION.md。
+
+本次使用本機頁面 http://127.0.0.1:4197/__qa/index.html 驗證：先在主 App 登入 A，保存專屬 QA 球拍目標；再由使用者在主 App 登出並登入 B，以 B 的實際 session 發送 REST 請求。此頁不要求密碼、不顯示或匯出 token，結果只含檢查名稱及 QA UUID，不部署到 Pages。QA 清理已取得使用者同意並完成。
 
 真實隔離測試工具：`node tools/verify-rls.mjs`。需要 migration 完成、config.js 設定，以及兩個不同且已確認 Email 的測試帳號。工具從 stdin 讀取登入資料、不寫入檔案、不印 token；建立獨立 UUID 測試資料並檢查：
 
@@ -111,7 +113,7 @@ node --test tests/*.test.mjs
 - 真實資料庫五張表 RLS=true、anon 權限撤銷。
 - 結束時只清理本次測試建立的球拍／穿線 UUID 與專屬選項。
 
-尚未執行此真實測試；登入資料需透過受控 stdin 傳入，請不要貼真實帳號密碼在聊天或提交 repository。執行前會與你確認測試帳號及操作範圍。
+CLI 工具是替代驗證方式，本次未執行；真正帳號隔離已由上述瀏覽器 QA 頁完成。若日後使用 CLI，登入資料需透過受控 stdin 傳入，請不要貼真實密碼在聊天或提交 repository，並先確認測試帳號與清理範圍。
 
 ## 檔案結構
 
@@ -121,6 +123,7 @@ supabase/migrations/  life-tools 專用新增 SQL
 supabase/security-status.sql
 tools/export-mvp.mjs  舊 SQLite 唯讀匯出
 tools/verify-rls.mjs   真實兩帳號 API 隔離測試
+tools/browser-qa.*    本機限定的實際登入隔離驗證頁
 preview.mjs           V2 靜態預覽（4197）
 server.mjs / repository.mjs  保留的 V1 資料維護與回歸測試
 private-backups/      本機私人備份（忽略、不部署）
@@ -134,9 +137,10 @@ V2 請使用 preview.mjs，不用舊 server.mjs 啟動介面。
 ## 待完成／限制
 
 - life-tools 公開 URL/key、SQL migration 與資料庫角色隔離驗證已完成。
-- 等待真實雲端 CRUD、匯入、A/B/anon 隔離與 RLS 開啟驗證。
+- 真實雲端 CRUD、使用狀態、歷史、Dashboard、舊資料匯入與 A/B/anon 隔離已通過；QA 已清理，原資料保留。
 - 等待專屬遠端 repository、公開授權與正式部署。
-- 未實測實體 iPhone／Android、大量資料效能及 Email 送信。送信能力沿用 life-tools 既有設定；任何 SMTP 調整都需另外確認。
+- 320／390px 手機及 1440px 桌面檢查未見橫向溢出。未實測實體 iPhone／Android、跨實體裝置、大量資料及 Email 送信。送信能力沿用 life-tools 設定；SMTP 調整需另外確認。
+- 已點擊 V2 備份匯出，沒有瀏覽器錯誤；Preview 下載事件逾時，尚未確認下載檔案落地，須在一般瀏覽器補測。
 - 同步是重新整理／前景輪詢，沒有 WebSocket 秒級即時推送。
 - 尚無實際上場時數、斷線日期、軟刪除復原與 V2 JSON 還原。
 

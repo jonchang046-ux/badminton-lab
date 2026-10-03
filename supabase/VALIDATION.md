@@ -29,15 +29,46 @@
 - A 資料在 B 攻擊後未變，球拍刪除連動穿線，歷史選項仍保留。
 - 真實安全狀態 RPC 顯示五張表啟用 RLS，anon 無 SELECT／INSERT 權限。
 
-## 尚待完成
+## 真實 A/B 登入與 API 隔離測試通過
 
-實際 Email／Password 成功登入、瀏覽器 CRUD／匯入、兩個帳號各自登入後的 API 測試、跨裝置操作與正式部署。
+使用者分別在主 App 輸入 A、B 的既有帳號密碼；本機 QA 頁以 Auth `/user` 驗證為兩個不同使用者，再用各自 session 呼叫正式 REST API。不是以管理員或 service-role 代替使用者，也沒有讀取／輸出密碼或 token。
+
+2026-10-03T03:28:11Z，12 項全部通過：
+
+1. A/B 是經 Auth 驗證的不同使用者。
+2. B 查詢 A 的指定 QA 球拍回傳空陣列。
+3. B PATCH A 球拍回傳空陣列，沒有修改。
+4. B DELETE A 球拍回傳空陣列，沒有刪除。
+5. B 對 A 的兩筆 QA 穿線逐筆 GET／PATCH／DELETE，全部空陣列。
+6. A 的 profile、歷史選項與匯入紀錄對 B 不可見。
+7. B snapshot 不含 A 資料。
+8. 未登入請求五張表與三個 RPC 均被拒絕。
+9. B 可建立並讀取自己的球拍與穿線。
+10. 新增／更新冒用 A user_id 被 RLS 拒絕。
+11. B 穿線關聯 A 球拍被複合外鍵拒絕。
+12. 安全狀態顯示五張表 RLS 啟用、anon SELECT／INSERT 權限撤銷。
+
+測試後唯讀資料庫查詢確認 A 球拍版本 2、兩筆穿線版本 2／1、磅數及心得均未變；原有 3 支球拍、2 筆穿線仍存在。
+
+完整 JSON 及畫面只保存於本 task 的 work/badminton-real-rls-report.json、work/badminton-real-rls.jpg，不提交私人 QA UUID／使用者 ID 到 repository。工具來源為 tools/browser-qa.html、tools/browser-qa.js；僅本機 preview 可存取，Pages 只部署 public/。
+
+## 實際資料操作與舊資料保留
+
+- A 新增一支 QA 球拍及兩次穿線，分開儲存 25／27 與 26／28 lb，包含錯磅、店家、價格與全部六項心得。
+- A 編輯球拍備註、穿線價格與心得，重新整理後保留；歷史依日期排序且標記最新設定。
+- A 從 native file chooser 匯入 MVP JSON，實際新增 3 支球拍、2 筆穿線；再匯入同檔沒有重複建立。
+- B 停用自己的 QA 球拍，首頁使用中數量從 1 改為 0；另一個既有分頁也取得停用狀態。
+- 320／390px 手機與 1440px 桌面沒有觀察到橫向溢出；觸控按鈕至少 44px，輸入文字 16px。
+- 經使用者確認，只刪除指定 QA 資料。在 B 主 App 完成穿線刪除，球拍仍存在且歷史為 0；再刪除球拍。A QA 球拍及兩筆穿線、9 個專屬選項由有 UUID／內容檢查的交易清理。最終 A 保留原有 3／2、B 為 0／0，所有 QA UUID 已不存在。沒有清除 Auth profile 或匯入識別紀錄。
+- 實體手機／Safari、跨實體裝置、Email 送信與正式部署尚未驗證。匯出點擊無 console 錯誤，但 Preview 下載事件逾時，未確認檔案落地。
+
+## 已修正問題
 
 使用者回報的「無法連線到雲端」已在瀏覽器重現並修正：原生 fetch 需要正確的 global receiver，不能當成 Cloud 物件的方法直接呼叫。測試先確認原碼失敗，再修正為 wrapper；目前 15/15 本機測試通過。
 
-修正後使用不存在的 example.invalid 測試帳號，真實瀏覽器已收到 Supabase 的 Invalid login credentials，後續也確認中文訊息「Email 或密碼不正確，請重新確認」。此證明瀏覽器已可連到 Auth，但不是使用者成功登入證明；沒有建立測試帳號或寄送 Email。
+修正後使用不存在的 example.invalid 測試帳號，真實瀏覽器已收到 Supabase 的 Invalid login credentials，後續也確認中文訊息「Email 或密碼不正確，請重新確認」。此為初步連線驗證；後續 A、B 已分別實際登入成功。沒有由工具建立 Auth 測試帳號或寄送 Email。
 
-上述資料庫角色驗證不取代真正帳號登入測試，也不代表正式版已上線。
+匯入期間發現背景同步重繪帳號頁，可能清除已選檔案。已在 public/app.js 保留匯入表單，實測輪詢與手動同步後仍可完成匯入。上述測試不代表正式版已上線。
 
 ## Advisor 結果
 

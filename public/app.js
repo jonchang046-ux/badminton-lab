@@ -14,7 +14,7 @@ const history=id=>state.records.filter(r=>r.racketId===id);
 const duration=r=>{const list=history(r.racketId),i=list.findIndex(x=>x.id===r.id),end=i>0?list[i-1].date:today();return Math.max(0,Math.round((Date.parse(end)-Date.parse(r.date))/86400000));};
 const notify=message=>{clearTimeout(toastTimer);$('#toast').textContent=message;$('#toast').style.display='block';toastTimer=setTimeout(()=>$('#toast').style.display='none',3500);};
 async function api(path,method='GET',data){return cloud.api(path,method,data);}
-async function refresh(){if(refreshPromise)return refreshPromise;const uid=cloud.session?.user?.id;refreshPromise=(async()=>{const next=await api('state');if(uid===cloud.session?.user?.id){state=next;if(!dialog.open)render();$('#sync-status').textContent='已同步 · '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});}})().finally(()=>refreshPromise=null);return refreshPromise;}
+async function refresh(){if(refreshPromise)return refreshPromise;const uid=cloud.session?.user?.id;refreshPromise=(async()=>{const next=await api('state');if(uid===cloud.session?.user?.id){state=next;if(!dialog.open&&!$('#import-file'))render();$('#sync-status').textContent='已同步 · '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});}})().finally(()=>refreshPromise=null);return refreshPromise;}
 function heading(title,sub,buttons=''){return `<div class="heading"><div><h1>${title}</h1><p class="sub">${sub}</p></div><div class="actions">${buttons}</div></div>`;}
 const addRacket=()=>'<button class="primary" data-action="add-racket">＋ 新增球拍</button>';
 const addRecord=()=>state.rackets.length?'<button data-action="add-record">＋ 新增穿線</button>':'';
