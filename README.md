@@ -2,7 +2,7 @@
 
 在原本 Badminton Lab 專案內升級，沿用深色中文 UI、球拍 CRUD、分開主／橫線磅數、六項心得、詳細頁與歷史。
 
-**目前狀態：程式與 SQL 已準備，本機測試通過；已連接 life-tools 並設定 Project URL／publishable key，唯讀檢查確認尚未建立 badminton_ 資料表，等待使用者手動套用 migration。尚未完成真實兩帳號隔離驗證、GitHub repository 建立及正式部署，不能視為已上線正式版。**
+**目前狀態：使用者已在 life-tools 套用 migration，五張表與 RLS／關聯已確認；公開設定、本機測試、真實未登入 API 拒絕與資料庫角色隔離測試通過。仍待實際帳號登入與瀏覽器流程驗證、GitHub repository 建立及正式部署，不能視為已上線正式版。**
 
 ## 啟動預覽
 
@@ -100,7 +100,7 @@ node tools/export-mvp.mjs
 node --test tests/*.test.mjs
 ```
 
-目前 13 組本機測試通過：保留 V1 後端回歸，並新增 V2 設定／秘密 key 防護、欄位映射、評分分母、選項、token 更新、版本衝突、匯入驗證與 Email callback 測試。V2 HTTP 使用測試替身，**不代表真實 Supabase RLS 已通過**。
+目前 15 組本機測試通過：保留 V1 後端回歸，並新增 V2 設定／秘密 key 防護、欄位映射、評分分母、選項、token 更新、版本衝突、匯入驗證、Email callback、瀏覽器 fetch receiver 與中文 Auth 錯誤測試。V2 單元測試的 HTTP 使用測試替身，**不代表真實帳號 API 隔離已通過**；另有真實未登入 API 與資料庫角色測試，詳見 supabase/VALIDATION.md。
 
 真實隔離測試工具：`node tools/verify-rls.mjs`。需要 migration 完成、config.js 設定，以及兩個不同且已確認 Email 的測試帳號。工具從 stdin 讀取登入資料、不寫入檔案、不印 token；建立獨立 UUID 測試資料並檢查：
 
@@ -133,11 +133,11 @@ V2 請使用 preview.mjs，不用舊 server.mjs 啟動介面。
 
 ## 待完成／限制
 
-- life-tools 公開 URL/key 已設定；等待 SQL 實際執行。
+- life-tools 公開 URL/key、SQL migration 與資料庫角色隔離驗證已完成。
 - 等待真實雲端 CRUD、匯入、A/B/anon 隔離與 RLS 開啟驗證。
 - 等待專屬遠端 repository、公開授權與正式部署。
 - 未實測實體 iPhone／Android、大量資料效能及 Email 送信。送信能力沿用 life-tools 既有設定；任何 SMTP 調整都需另外確認。
 - 同步是重新整理／前景輪詢，沒有 WebSocket 秒級即時推送。
 - 尚無實際上場時數、斷線日期、軟刪除復原與 V2 JSON 還原。
 
-詳細進度見 V2_STATUS.md；歷史 MVP 測試報告保留在 TEST_REPORT.md。
+詳細進度見 V2_STATUS.md，雲端驗證見 supabase/VALIDATION.md；歷史 MVP 測試報告保留在 TEST_REPORT.md。
